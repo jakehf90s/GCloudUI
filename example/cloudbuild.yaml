@@ -1,0 +1,29 @@
+# Example Cloud Build configuration for Google Cloud Access Tool
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/gcloud-access:$COMMIT_SHA', '.']
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/gcloud-access:$COMMIT_SHA']
+  
+  # Tag with 'latest' tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['tag', 'gcr.io/$PROJECT_ID/gcloud-access:$COMMIT_SHA', 'gcr.io/$PROJECT_ID/gcloud-access:latest']
+  
+  # Push the 'latest' tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/gcloud-access:latest']
+
+# Store images in Google Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/gcloud-access:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/gcloud-access:latest'
+
+# Build timeout
+timeout: '1200s'
+
+# Machine type for faster builds
+options:
+  machineType: 'E2_HIGHCPU_8' 

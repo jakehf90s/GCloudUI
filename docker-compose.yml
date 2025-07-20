@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  gcloud-access:
+    build: .
+    container_name: gcloud-access-tool
+    environment:
+      - DISPLAY=${DISPLAY}
+      - PYTHONUNBUFFERED=1
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+    volumes:
+      # Mount X11 socket for GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Mount Google Cloud config
+      - ~/.config/gcloud:/home/gclouduser/.config/gcloud:ro
+      # Mount application data (optional)
+      - ./data:/app/data:rw
+      # Mount source code for development (optional)
+      - .:/app:ro
+    network_mode: host
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    profiles:
+      - gui
+
+  gcloud-access-headless:
+    build: .
+    container_name: gcloud-access-tool-headless
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+      - DISPLAY=:99
+    volumes:
+      # Mount Google Cloud config
+      - ~/.config/gcloud:/home/gclouduser/.config/gcloud:ro
+      # Mount application data
+      - ./data:/app/data:rw
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    profiles:
+      - headless
+
+  # Optional: X11 server for headless environments
+  xvfb:
+    image: ubuntu:20.04
+    container_name: xvfb-server
+    command: >
+      sh -c "apt-get update && apt-get install -y xvfb && 
+             Xvfb :99 -screen 0 1024x768x24 -ac +extension GLX +render -noreset"
+    environment:
+      - DISPLAY=:99
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    network_mode: host
+    profiles:
+      - headless
+    depends_on:
+      - gcloud-access-headless
+
+networks:
+  default:
+    name: gcloud-access-network 
